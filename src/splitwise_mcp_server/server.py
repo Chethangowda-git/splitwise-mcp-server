@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import argparse
+import os
 from decimal import Decimal
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from . import __version__
 from .allocation import ROUNDING_METHOD, AllocationError, allocate
@@ -73,8 +77,27 @@ def allocate_amount(amount: Decimal, weights: dict[str, Decimal], minor_unit_dig
     return AllocationResult(amount=amount, shares=shares, extra_minor_units=extra, rounding_method=ROUNDING_METHOD)
 
 
+@mcp.custom_route("/health", methods=["GET"])
+async def health(_: Request) -> JSONResponse:
+    return JSONResponse({"status": "ok"})
+
+
 def main() -> None:
-    mcp.run()
+    parser = argparse.ArgumentParser(prog="splitwise-mcp-server")
+    parser.add_argument(
+        "--http",
+        action="store_true",
+        help="Serve streamable HTTP at /mcp instead of stdio. Implied when $PORT is set (e.g. on Railway).",
+    )
+    parser.add_argument("--host", default=os.environ.get("HOST", "0.0.0.0"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
+    args = parser.parse_args()
+
+    if args.http or "PORT" in os.environ:
+        # Stateless: every request stands alone, so any replica can serve it.
+        mcp.run("streamable-http", host=args.host, port=args.port, stateless_http=True)
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":

@@ -61,6 +61,18 @@ Claude Code:
 claude mcp add splitwise -- /path/to/splitwise-mcp-server/.venv/bin/splitwise-mcp-server
 ```
 
+## Remote (HTTP) mode
+
+```bash
+splitwise-mcp-server --http --port 8000   # MCP endpoint: http://localhost:8000/mcp
+```
+
+HTTP mode is used automatically whenever `$PORT` is set. It binds `0.0.0.0`, runs stateless, and serves `GET /health` for health checks.
+
+**Railway:** `railway.json` sets the start command and health check. `requirements.txt` installs this package, and `.python-version` pins Python. After a deploy, generate a public domain under the service's **Settings → Networking**. The connector URL is `https://<your-domain>/mcp`. Use that URL for Claude custom connectors and ChatGPT developer-mode connectors (authentication: none).
+
+The HTTP endpoint has no authentication. Anyone with the URL can call the tools, which only do arithmetic on the input and store nothing.
+
 Claude Desktop (`claude_desktop_config.json`):
 
 ```json
