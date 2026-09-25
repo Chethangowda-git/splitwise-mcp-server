@@ -69,7 +69,7 @@ splitwise-mcp-server --http --port 8000   # MCP endpoint: http://localhost:8000/
 
 HTTP mode is used automatically whenever `$PORT` is set. It binds `0.0.0.0`, runs stateless, and serves `GET /health` for health checks.
 
-**Railway:** `railway.json` sets the start command and health check. `requirements.txt` installs this package, and `.python-version` pins Python. After a deploy, generate a public domain under the service's **Settings → Networking**. The connector URL is `https://<your-domain>/mcp`. Use that URL for Claude custom connectors and ChatGPT developer-mode connectors (authentication: none).
+**Railway:** `railway.json` sets the start command (`python main.py --http`, which runs from source with no install step) and the health check. `requirements.txt` lists the runtime dependencies, and `.python-version` pins Python. Keep `requirements.txt` in sync with `pyproject.toml`. After a deploy, generate a public domain under the service's **Settings → Networking**. The connector URL is `https://<your-domain>/mcp`. Use that URL for Claude custom connectors and ChatGPT developer-mode connectors (authentication: none).
 
 The HTTP endpoint has no authentication. Anyone with the URL can call the tools, which only do arithmetic on the input and store nothing.
 

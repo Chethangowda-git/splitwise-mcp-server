@@ -1,7 +1,7 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "splitwise-mcp-server --http",
+    "startCommand": "python main.py --http",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }
