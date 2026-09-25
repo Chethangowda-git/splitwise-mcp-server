@@ -9,6 +9,10 @@ An MCP server that reconciles a receipt and splits it between people to the exac
 | `reconcile_receipt` | Checks that item lines, discounts, tax, tip, and fees add up to the printed subtotal and total. Lists anything ambiguous. Assigns nothing to anyone. |
 | `split_receipt` | Reconciles, then allocates every component to people. Refuses if the receipt doesn't balance or anything is ambiguous. |
 | `allocate_amount` | Splits a single amount by weights using the same rounding. |
+| `list_splitwise_people` | Lists the signed-in user's Splitwise friends and groups, with ids. |
+| `add_expense_to_splitwise` | Splits the receipt the same way and records it as one Splitwise expense: the payer's paid share is the full cost, and everyone's owed share is their exact total. Refuses if the receipt doesn't reconcile or someone isn't mapped to a Splitwise user. |
+
+The two Splitwise tools only appear when Splitwise is configured (see below).
 
 ## Allocation rules
 
@@ -71,7 +75,25 @@ HTTP mode is used automatically whenever `$PORT` is set. It binds `0.0.0.0`, run
 
 **Railway:** `railway.json` sets the start command (`python main.py --http`, which runs from source with no install step) and the health check. `requirements.txt` lists the runtime dependencies, and `.python-version` pins Python. Keep `requirements.txt` in sync with `pyproject.toml`. After a deploy, generate a public domain under the service's **Settings → Networking**. The connector URL is `https://<your-domain>/mcp`. Use that URL for Claude custom connectors and ChatGPT developer-mode connectors (authentication: none).
 
-The HTTP endpoint has no authentication. Anyone with the URL can call the tools, which only do arithmetic on the input and store nothing.
+Without the Splitwise settings below, the HTTP endpoint has no authentication and serves only the calculation tools.
+
+## Splitwise sign-in (multi-user)
+
+When configured, everyone who adds the connector signs in with their own Splitwise account. The server is an OAuth authorization server for MCP clients (dynamic client registration + PKCE) and hands the actual login to Splitwise. Before sending users to Splitwise, it shows a consent page naming the requesting app and where the user will be redirected. All tools then require sign-in.
+
+1. Register an app at https://secure.splitwise.com/apps and set its callback URL to `https://<your-domain>/oauth/splitwise/callback`.
+2. Set these environment variables (on Railway: service → **Variables**):
+
+| Variable | Value |
+|---|---|
+| `PUBLIC_URL` | `https://<your-domain>` (no trailing slash) |
+| `SPLITWISE_CLIENT_ID` | The app's consumer key |
+| `SPLITWISE_CLIENT_SECRET` | The app's consumer secret |
+| `SERVER_SECRET` | A random string of 32+ characters, e.g. `python3 -c "import secrets; print(secrets.token_urlsafe(48))"` |
+
+The server stores nothing. Client registrations, sign-in state, and tokens are encrypted with `SERVER_SECRET` and handed to the client, and each user's Splitwise token exists only inside their own encrypted token. Changing `SERVER_SECRET` signs everyone out. Access tokens last 24 hours and refresh tokens 90 days. There is no server-side revocation: users can revoke access from their Splitwise account settings.
+
+**Local use with your own account:** in stdio mode, set `SPLITWISE_API_KEY` to a personal API key (from your app's page at secure.splitwise.com/apps) to enable the Splitwise tools. The HTTP server ignores this variable.
 
 Claude Desktop (`claude_desktop_config.json`):
 

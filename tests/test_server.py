@@ -1,7 +1,9 @@
 import pytest
 from mcp.client import Client
 
-from splitwise_mcp_server.server import mcp
+from splitwise_mcp_server.server import create_server
+
+mcp = create_server()
 
 pytestmark = pytest.mark.anyio
 
